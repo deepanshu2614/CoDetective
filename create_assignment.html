@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Create Assignment - Code Similarity Detector{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/teacher.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="create-header">
+    <h1>Create Assignment</h1>
+    <a href="{{ url_for('teacher.assignments') }}" class="btn btn-secondary">Back to Assignments</a>
+</div>
+
+<div class="create-form-container">
+    <form method="post" enctype="multipart/form-data" class="create-form">
+        <div class="form-group">
+            <label for="title">Assignment Title</label>
+            <input type="text" id="title" name="title" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="10" required></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="deadline">Deadline</label>
+            <input type="date" id="deadline" name="deadline">
+        </div>
+        
+        <div class="form-group">
+            <label for="question_file">Question File (Optional)</label>
+            <input type="file" id="question_file" name="question_file" accept=".txt,.pdf">
+            <small>Upload a text or PDF file containing the assignment question</small>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Create Assignment</button>
+    </form>
+</div>
+{% endblock %}

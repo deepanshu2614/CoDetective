@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Dashboard - Code Similarity Detector{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/teacher.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Teacher Dashboard</h1>
+    <p>Welcome, {{ current_user.username }}!</p>
+</div>
+
+<div class="dashboard-actions">
+    <a href="{{ url_for('teacher.create_assignment') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Create Assignment
+    </a>
+    <a href="{{ url_for('teacher.assignments') }}" class="btn btn-secondary">
+        <i class="fas fa-list"></i> View All Assignments
+    </a>
+</div>
+
+<div class="dashboard-stats">
+
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ assignments|length }}</h3>
+            <p>Total Assignments</p>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ total_submissions }}</h3>
+            <p>Total Submissions</p>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-chart-bar"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ assignments_with_submissions }}</h3>
+            <p>Assignments with Submissions</p>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="recent-assignments">
+    <h2>Recent Assignments</h2>
+    
+    {% if assignments %}
+        <div class="assignments-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Created</th>
+                        <th>Deadline</th>
+                        <th>Submissions</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assignment in assignments[:5] %}
+                        <tr>
+                            <td>{{ assignment.title }}</td>
+                            <td>{{ assignment.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ assignment.deadline.strftime('%Y-%m-%d') if assignment.deadline else 'No deadline' }}</td>
+                            <td>{{ assignment.submissions|length }}</td>
+                            <td>
+                                <a href="{{ url_for('teacher.view_assignment', assignment_id=assignment.id) }}" class="btn btn-sm btn-primary">View</a>
+                                {% if assignment.submissions %}
+                                    <a href="{{ url_for('teacher.student_similarity', assignment_id=assignment.id) }}" class="btn btn-sm btn-secondary">Student Similarity</a>
+                                    <a href="{{ url_for('teacher.ai_similarity', assignment_id=assignment.id) }}" class="btn btn-sm btn-info">AI Similarity</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="view-all">
+            <a href="{{ url_for('teacher.assignments') }}" class="btn btn-secondary">View All Assignments</a>
+        </div>
+    {% else %}
+        <div class="no-assignments">
+            <p>You haven't created any assignments yet.</p>
+            <a href="{{ url_for('teacher.create_assignment') }}" class="btn btn-primary">Create Your First Assignment</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

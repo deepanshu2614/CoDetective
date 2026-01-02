@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}AI Similarity - {{ assignment.title }} - Code Similarity Detector{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/teacher.css') }}">
+<style>
+    .similarity-container {
+        margin-top: 30px;
+    }
+    
+    .file-select-container {
+        margin-bottom: 20px;
+    }
+    
+    .file-select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    
+    .result-container {
+        margin-top: 30px;
+        display: none;
+    }
+    
+    .ai-result {
+        display: flex;
+        align-items: center;
+        margin-top: 20px;
+    }
+    
+    .ai-meter {
+        flex: 1;
+        height: 30px;
+        background: #E5E7EB;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .ai-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10B981, #EF4444);
+        border-radius: 15px;
+        width: 0%;
+        transition: width 1.5s ease;
+    }
+    
+    .ai-percentage {
+        margin-left: 15px;
+        font-weight: 600;
+        font-size: 1.2rem;
+    }
+    
+    .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .feature {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .feature-name {
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    
+    .feature-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #4F46E5;
+    }
+    
+    .conclusion-card {
+        margin-top: 20px;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    
+    .conclusion-ai {
+        background: rgba(239, 68, 68, 0.1);
+        color: rgba(239, 68, 68, 1);
+    }
+    
+    .conclusion-human {
+        background: rgba(16, 185, 129, 0.1);
+        color: rgba(16, 185, 129, 1);
+    }
+    
+    .reference-solution {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 8px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        font-family: monospace;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="similarity-header">
+    <h1>AI Similarity Analysis</h1>
+    <h2>{{ assignment.title }}</h2>
+    <a href="{{ url_for('teacher.view_assignment', assignment_id=assignment.id) }}" class="btn btn-secondary">Back to Assignment</a>
+</div>
+
+<div class="similarity-container">
+    {% if submissions %}
+        <div class="file-select-container">
+            <h3>Select File for AI Comparison</h3>
+            <p>Select a file to compare with AI-generated code</p>
+            <div class="file-select" id="file-select">
+                <div class="file-list">
+                    {% for submission in submissions %}
+                        <div class="file-item">
+                            <input type="radio" id="file-{{ submission.id }}" name="selected-file" value="{{ submission.id }}" data-filename="{{ submission.filename }}">
+                            <label for="file-{{ submission.id }}">{{ submission.student.username }} - {{ submission.filename }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <button id="analyze-btn" class="btn btn-primary">Analyze AI Similarity</button>
+        </div>
+        
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Comparing with AI-generated code...</p>
+        </div>
+        
+        <div class="result-container" id="result-container">
+            <div class="result-card">
+                <h3>AI Detection Result</h3>
+                <div class="ai-result">
+                    <div class="ai-meter">
+                        <div class="ai-fill" id="ai-fill"></div>
+                    </div>
+                    <div class="ai-percentage" id="ai-percentage">0%</div>
+                </div>
+            </div>
+            
+            <div class="result-card">
+                <h3>Feature Analysis</h3>
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-name">Token Similarity</div>
+                        <div class="feature-value" id="token-similarity">0%</div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-name">Structure Similarity</div>
+                        <div class="feature-value" id="structure-similarity">0%</div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-name">Variable Naming</div>
+                        <div class="feature-value" id="variable-naming">0%</</div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-name">Logic Flow</div>
+                        <div class="feature-value" id="logic-flow">0%</div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-name">Comments</div>
+                        <div class="feature-value" id="comments">0%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-card">
+                <h3>Final Conclusion</h3>
+                <div id="ai-conclusion" class="conclusion-card"></div>
+            </div>
+            
+            <div class="result-card">
+                <h3>Reference Solution</h3>
+                <div id="reference-solution" class="reference-solution"></div>
+            </div>
+        </div>
+    {% else %}
+        <div class="no-submissions">
+            <p>No submissions available for analysis.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/teacher.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const loading = document.getElementById('loading');
+        const resultContainer = document.getElementById('result-container');
+    
+        analyzeBtn.addEventListener('click', function() {
+            const selectedFile = document.querySelector('input[name="selected-file"]:checked');
+    
+            if (!selectedFile) {
+                alert('Please select a file for comparison');
+                return;
+            }
+    
+            // Show loading spinner
+            loading.style.display = 'block';
+            resultContainer.style.display = 'none';
+    
+            // STEP 1: Fetch the selected student's file
+            fetch(`/api/get_submission_file/${selectedFile.value}`)
+                .then(response => response.blob())
+                .then(blob => {
+                    const formData = new FormData();
+    
+                    // Add the file blob to request
+                    formData.append('file', blob, selectedFile.getAttribute('data-filename'));
+    
+                    // IMPORTANT: Add assignment_id for backend question lookup
+                    formData.append('assignment_id', '{{ assignment.id }}');
+    
+                    // STEP 2: Send to AI detection API
+                    return fetch('/api/ai-detection', {
+                        method: 'POST',
+                        body: formData
+                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    resultContainer.style.display = 'block';
+    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+    
+                    // Update AI % meter
+                    const aiPercentage = Math.round(data.ai_probability * 100);
+                    document.getElementById('ai-fill').style.width = aiPercentage + '%';
+                    document.getElementById('ai-percentage').textContent = aiPercentage + '%';
+    
+                    // Update feature cards
+                    document.getElementById('token-similarity').textContent = data.features.token_similarity;
+                    document.getElementById('structure-similarity').textContent = data.features.structure_similarity;
+                    document.getElementById('variable-naming').textContent = data.features.variable_naming;
+                    document.getElementById('logic-flow').textContent = data.features.logic_flow;
+                    document.getElementById('comments').textContent = data.features.comments;
+    
+                    // Update conclusion
+                    const conclusionElement = document.getElementById('ai-conclusion');
+                    conclusionElement.textContent = data.conclusion;
+                    conclusionElement.className = data.is_ai_generated 
+                        ? 'conclusion-card conclusion-ai' 
+                        : 'conclusion-card conclusion-human';
+    
+                    // Display reference solution
+                    document.getElementById('reference-solution').textContent = data.reference_solution;
+    
+                    // Save result
+                    saveResult('student_vs_ai', data);
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    alert(`Error: ${error.message}`);
+                    console.error('Error:', error);
+                });
+        });
+    
+        // Store result in DB
+        function saveResult(resultType, resultData) {
+            fetch('/teacher/save_similarity_result', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    assignment_id: {{ assignment.id }},
+                    submission_id: document.querySelector('input[name="selected-file"]:checked').value,
+                    result_type: resultType,
+                    result_data: resultData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error('Failed to save result:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving result:', error);
+            });
+        }
+    });
+    </script>
+    
+{% endblock %}

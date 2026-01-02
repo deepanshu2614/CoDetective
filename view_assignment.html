@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ assignment.title }} - Code Similarity Detector{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/teacher.css') }}">
+{% endblock %}
+
+{% block content %}
+<<div class="assignment-header">
+    <h1>{{ assignment.title }}</h1>
+    <div class="assignment-meta">
+        <span>Created: {{ assignment.created_at.strftime('%Y-%m-%d') }}</span>
+        {% if assignment.deadline %}
+            <span>Deadline: {{ assignment.deadline.strftime('%Y-%m-%d') }}</span>
+        {% endif %}
+    </div>
+
+    <div class="assignment-actions">
+        <a href="{{ url_for('teacher.assignments') }}" class="btn btn-secondary">Back to Assignments</a>
+        
+        {% if submissions %}
+            <a href="{{ url_for('teacher.student_similarity', assignment_id=assignment.id) }}" class="btn btn-secondary">Student Similarity</a>
+            <a href="{{ url_for('teacher.ai_similarity', assignment_id=assignment.id) }}" class="btn btn-info">AI Similarity</a>
+        {% endif %}
+    
+        <!-- ONLY DELETE BUTTON -->
+        <a href="{{ url_for('teacher.delete_assignment', assignment_id=assignment.id) }}"
+           class="btn btn-danger"
+           onclick="return confirm('Are you sure you want to delete this assignment? This cannot be undone.');">
+           Delete Assignment
+        </a>
+    </div>
+</div>
+
+<div class="assignment-description">
+    <h2>Description</h2>
+    <p>{{ assignment.description }}</p>
+</div>
+
+<div class="submissions-container">
+    <h2>Submissions ({{ submissions|length }})</h2>
+    
+    {% if submissions %}
+        <div class="submissions-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Submitted At</th>
+                        <th>File</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for submission in submissions %}
+                        <tr>
+                            <td>{{ submission.student.username }}</td>
+                            <td>{{ submission.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ submission.filename }}</td>
+                            <td>
+                                <a href="{{ url_for('static', filename='uploads/' + submission.filename) }}" class="btn btn-sm btn-primary" download>Download</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="no-submissions">
+            <p>No submissions yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

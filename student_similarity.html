@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+
+{% block title %}Student Similarity - {{ assignment.title }} - Code Similarity Detector{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/teacher.css') }}">
+<style>
+    .similarity-container {
+        margin-top: 30px;
+    }
+    
+    .file-select-container {
+        margin-bottom: 20px;
+    }
+    
+    .file-select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    
+    .result-container {
+        margin-top: 30px;
+        display: none;
+    }
+    
+    .similarity-meter {
+        height: 30px;
+        background: #E5E7EB;
+        border-radius: 15px;
+        overflow: hidden;
+        margin-bottom: 15px;
+    }
+    
+    .similarity-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10B981, #FBBF24, #EF4444);
+        border-radius: 15px;
+        width: 0%;
+        transition: width 1.5s ease;
+    }
+    
+    .similarity-percentage {
+        text-align: center;
+        font-weight: 600;
+        margin-top: 5px;
+    }
+    
+    .chart-container {
+        height: 400px;
+        margin-top: 20px;
+        position: relative;
+    }
+    
+    .pair-select-container {
+        margin: 20px 0;
+    }
+    
+    .pair-select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    
+    .mesh-container {
+        margin-top: 30px;
+    }
+    
+    .mesh-chart-container {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        height: 400px;
+        position: relative;
+    }
+    
+    .mesh-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    
+    .mesh-chart {
+        height: 350px;
+        position: relative;
+    }
+    
+    .legend {
+        display: flex;
+        justify-content: center;
+        margin-top: 15px;
+        gap: 20px;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .legend-color {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+    }
+    
+    .legend-text {
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="similarity-header">
+    <h1>Student Similarity Analysis</h1>
+    <h2>{{ assignment.title }}</h2>
+    <a href="{{ url_for('teacher.view_assignment', assignment_id=assignment.id) }}" class="btn btn-secondary">Back to Assignment</a>
+</div>
+
+<div class="similarity-container">
+    {% if submissions %}
+        <div class="file-select-container">
+            <h3>Select Files for Comparison</h3>
+            <p>Select at least two files to compare for similarity</p>
+            <div class="file-select" id="file-select">
+                <div class="file-list">
+                    {% for submission in submissions %}
+                        <div class="file-item">
+                            <input type="checkbox" id="file-{{ submission.id }}" value="{{ submission.id }}" data-filename="{{ submission.filename }}">
+                            <label for="file-{{ submission.id }}">{{ submission.student.username }} - {{ submission.filename }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <button id="analyze-btn" class="btn btn-primary">Analyze Similarity</button>
+        </div>
+        
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Analyzing code similarity...</p>
+        </div>
+        
+        <div class="result-container" id="result-container">
+            <div class="result-card">
+                <h3>Similarity Overview</h3>
+                <div class="similarity-meter">
+                    <div class="similarity-fill" id="similarity-fill"></div>
+                </div>
+                <div class="similarity-percentage" id="similarity-percentage">0%</div>
+            </div>
+            
+            <div class="result-card">
+                <h3>Pairwise Similarity Breakdown</h3>
+                <div class="chart-container">
+                    <canvas id="pairwise-bar-chart"></canvas>
+                </div>
+                
+                <div class="pair-select-container">
+                    <label for="pair-select">Select Pair:</label>
+                    <select id="pair-select" class="pair-select">
+                        <option value="">-- Select a pair --</option>
+                    </select>
+                </div>
+                
+                <div class="mesh-container">
+                    <div class="mesh-chart-container" id="mesh-chart-container" style="display: none;">
+                        <div class="mesh-title" id="mesh-title"></div>
+                        <div class="mesh-chart" id="mesh-chart"></div>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(16, 185, 129, 0.7);"></div>
+                        <div class="legend-text">Low Similarity (0-50%)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(251, 191, 36, 0.7);"></div>
+                        <div class="legend-text">Medium Similarity (50-80%)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(239, 68, 68, 0.7);"></div>
+                        <div class="legend-text">High Similarity (80-100%)</div>
+                    </div>
+                </div>
+                <div class="result-card">
+    <h3>Cluster Similarity Graph</h3>
+    <p>This graph shows how student submissions naturally group into clusters based on code similarity.</p>
+
+    <div id="cluster-chart-container" style="width: 100%; height: 450px; margin-top: 20px;">
+        <div id="cluster-chart" style="width: 100%; height: 100%;"></div>
+    </div>
+
+    <div id="cluster-legend" style="margin-top: 15px;"></div>
+</div>
+
+            </div>
+        </div>
+    {% else %}
+        <div class="no-submissions">
+            <p>No submissions available for analysis.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/teacher.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const loading = document.getElementById('loading');
+        const resultContainer = document.getElementById('result-container');
+        
+        analyzeBtn.addEventListener('click', function() {
+            const selectedFiles = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
+            
+            if (selectedFiles.length < 2) {
+                alert('Please select at least two files for comparison');
+                return;
+            }
+            
+            // Show loading
+            loading.style.display = 'block';
+            resultContainer.style.display = 'none';
+            
+            // Fetch question
+            fetch(`/teacher/get_question/{{ assignment.id }}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    // Store question in session
+                    sessionStorage.setItem('question', data.question);
+                    
+                    // Fetch files and analyze
+                    return Promise.all(selectedFiles.map(file => {
+                        return fetch(`/api/get_submission_file/${file.value}`)
+                            .then(response => response.blob())
+                            .then(blob => {
+                                const formData = new FormData();
+                                formData.append('files', blob, file.getAttribute('data-filename'));
+                                return formData;
+                            });
+                    }));
+                })
+                .then(formDataArray => {
+                    // Combine all FormData into one
+                    const combinedFormData = new FormData();
+                    formDataArray.forEach(formData => {
+                        for (let [key, value] of formData.entries()) {
+                            combinedFormData.append(key, value);
+                        }
+                    });
+                    
+                    // Send to API
+                    return fetch('/api/student-similarity', {
+                        method: 'POST',
+                        body: combinedFormData
+                    });
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.error || 'Server error');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    loading.style.display = 'none';
+                    resultContainer.style.display = 'block';
+                    
+                    // Update similarity meter
+                    const similarityPercentage = Math.round(data.overall_similarity * 100);
+                    document.getElementById('similarity-fill').style.width = similarityPercentage + '%';
+                    document.getElementById('similarity-percentage').textContent = similarityPercentage + '%';
+                    
+                    // Create bar chart for pairwise similarity
+                    createPairwiseBarChart(data.pairwise_similarities);
+                    
+                    // Populate dropdown with pairs
+                    populatePairDropdown(data.pairwise_similarities);
+                    
+                    if (data.cluster_data) {
+    renderClusterGraph(data.cluster_data);
+}
+
+                    // Save result to database
+                    saveResult('student_vs_student', data);
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    alert(`Error: ${error.message}`);
+                    console.error('Error:', error);
+                });
+        });
+        
+        function createPairwiseBarChart(pairwiseData) {
+            const ctx = document.getElementById('pairwise-bar-chart').getContext('2d');
+            
+            // Prepare data for the chart
+            const labels = pairwiseData.map(pair => `${pair.file1} vs ${pair.file2}`);
+            const data = pairwiseData.map(pair => pair.similarity['overall'] * 100);
+            
+            // Background colors based on similarity level
+            const backgroundColors = data.map(value => {
+                if (value > 80) return 'rgba(239, 68, 68, 0.7)'; // Red for high similarity
+                if (value > 50) return 'rgba(251, 191, 36, 0.7)'; // Yellow for medium similarity
+                return 'rgba(16, 185, 129, 0.7)'; // Green for low similarity
+            });
+            
+            // Border colors based on similarity level
+            const borderColors = data.map(value => {
+                if (value > 80) return 'rgba(239, 68, 68, 1)'; // Red for high similarity
+                if (value > 50) return 'rgba(251, 191, 36, 1)'; // Yellow for medium similarity
+                return 'rgba(16, 185, 129, 1)'; // Green for low similarity
+            });
+            
+            // Create the chart
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Similarity %',
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Similarity Percentage'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'File Pairs'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Similarity: ' + context.raw.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function populatePairDropdown(pairwiseData) {
+            const pairSelect = document.getElementById('pair-select');
+            
+            // Clear existing options except the placeholder
+            while (pairSelect.options.length > 1) {
+                pairSelect.remove(1);
+            }
+            
+            // Add new options
+            pairwiseData.forEach((pair, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${pair.file1} vs ${pair.file2}`;
+                pairSelect.appendChild(option);
+            });
+            
+            // Add event listener for dropdown change
+            pairSelect.addEventListener('change', function() {
+                const selectedIndex = this.value;
+                if (selectedIndex !== '') {
+                    displayMeshGraph(parseInt(selectedIndex), pairwiseData[selectedIndex]);
+                } else {
+                    document.getElementById('mesh-chart-container').style.display = 'none';
+                }
+            });
+        }
+        
+        function displayMeshGraph(index, pairData) {
+            const meshContainer = document.getElementById('mesh-chart-container');
+            const meshTitle = document.getElementById('mesh-title');
+            const meshChart = document.getElementById('mesh-chart');
+            
+            // Show the container
+            meshContainer.style.display = 'block';
+            
+            // Set the title
+            meshTitle.textContent = `${pairData.file1} vs ${pairData.file2}`;
+            
+            // Clear previous chart
+            d3.select(meshChart).selectAll("*").remove();
+            
+            // Set up dimensions
+            const width = meshChart.clientWidth;
+            const height = meshChart.clientHeight;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) * 0.4;
+            
+            // Create SVG
+            const svg = d3.select(meshChart)
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+            
+            // Define the factors
+            const factors = ['Token', 'Structure', 'Variable', 'Logic', 'Comments'];
+            const factorValues = [
+                pairData.similarity['token'],
+                pairData.similarity['structure'],
+                pairData.similarity['variable'],
+                pairData.similarity['logic'],
+                pairData.similarity['comments']
+            ];
+            
+            // Calculate positions for each factor
+            const angleStep = (Math.PI * 2) / factors.length;
+            const factorPositions = factors.map((factor, i) => {
+                const angle = i * angleStep - Math.PI / 2;
+                return {
+                    x: centerX + Math.cos(angle) * radius,
+                    y: centerY + Math.sin(angle) * radius,
+                    factor: factor,
+                    value: factorValues[i]
+                };
+            });
+            
+            // Create lines for the web
+            const webLines = svg.append("g")
+                .selectAll("line")
+                .data(factorPositions)
+                .enter().append("line")
+                .attr("x1", centerX)
+                .attr("y1", centerY)
+                .attr("x2", d => d.x)
+                .attr("y2", d => d.y)
+                .attr("stroke", "#CBD5E1")
+                .attr("stroke-width", 1);
+            
+            // Create circles for the web levels
+            const levels = 5;
+            for (let i = 1; i <= levels; i++) {
+                const levelRadius = (radius / levels) * i;
+                
+                svg.append("circle")
+                    .attr("cx", centerX)
+                    .attr("cy", centerY)
+                    .attr("r", levelRadius)
+                    .attr("fill", "none")
+                    .attr("stroke", "#E5E7EB")
+                    .attr("stroke-width", 1)
+                    .attr("stroke-dasharray", "2,2");
+            }
+            
+            // Create the data polygon
+            const dataPoints = factorPositions.map(d => {
+                const angle = Math.atan2(d.y - centerY, d.x - centerX);
+                const distance = d.value * radius;
+                return {
+                    x: centerX + Math.cos(angle) * distance,
+                    y: centerY + Math.sin(angle) * distance
+                };
+            });
+            
+            // Close the polygon by adding the first point at the end
+            dataPoints.push(dataPoints[0]);
+            
+            // Create the polygon
+            svg.append("polygon")
+                .attr("points", dataPoints.map(d => `${d.x},${d.y}`).join(" "))
+                .attr("fill", "rgba(79, 70, 229, 0.3)")
+                .attr("stroke", "#4F46E5")
+                .attr("stroke-width", 2);
+            
+            // Create data points
+            svg.selectAll(".data-point")
+                .data(dataPoints.slice(0, -1)) // Exclude the last duplicated point
+                .enter().append("circle")
+                .attr("class", "data-point")
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("r", 5)
+                .attr("fill", "#4F46E5");
+            
+            // Create factor labels
+            svg.selectAll(".factor-label")
+                .data(factorPositions)
+                .enter().append("text")
+                .attr("class", "factor-label")
+                .attr("x", d => d.x)
+                .attr("y", d => d.y - 10)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .attr("font-weight", "500")
+                .text(d => d.factor);
+            
+            // Create value labels
+            svg.selectAll(".value-label")
+                .data(factorPositions)
+                .enter().append("text")
+                .attr("class", "value-label")
+                .attr("x", d => {
+                    const angle = Math.atan2(d.y - centerY, d.x - centerX);
+                    const distance = d.value * radius;
+                    return centerX + Math.cos(angle) * distance;
+                })
+                .attr("y", d => {
+                    const angle = Math.atan2(d.y - centerY, d.x - centerX);
+                    const distance = d.value * radius;
+                    return centerY + Math.sin(angle) * distance - 15;
+                })
+                .attr("text-anchor", "middle")
+                .attr("font-size", "10px")
+                .attr("font-weight", "600")
+                .attr("fill", "#4F46E5")
+                .text(d => `${(d.value * 100).toFixed(0)}%`);
+        }
+        
+        function saveResult(resultType, resultData) {
+            fetch('/teacher/save_similarity_result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    assignment_id: {{ assignment.id }},
+                    result_type: resultType,
+                    result_data: resultData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error('Failed to save result:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving result:', error);
+            });
+        }
+    });
+</script>
+{% endblock %}
