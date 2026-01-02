@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Login / Sign Up - Code Similarity Detector{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-container {
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .auth-tabs {
+        display: flex;
+        margin-bottom: 30px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .auth-tab {
+        flex: 1;
+        padding: 15px;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 500;
+        color: #666;
+        transition: all 0.3s ease;
+    }
+    
+    .auth-tab.active {
+        color: #4F46E5;
+        border-bottom: 2px solid #4F46E5;
+    }
+    
+    .auth-form {
+        display: none;
+    }
+    
+    .auth-form.active {
+        display: block;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+    
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+    
+    .btn {
+        background: #4F46E5;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 5px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 16px;
+        width: 100%;
+    }
+    
+    .btn:hover {
+        background: #4338CA;
+    }
+    
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .checkbox-group input {
+        margin-right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2 style="text-align: center; margin-bottom: 30px;">Welcome to Code Similarity Detector</h2>
+    
+    <div class="auth-tabs">
+        <div class="auth-tab {% if not signup %}active{% endif %}" onclick="switchTab('login')">Login</div>
+        <div class="auth-tab {% if signup %}active{% endif %}" onclick="switchTab('signup')">Sign Up</div>
+    </div>
+    
+    <form class="auth-form {% if not signup %}active{% endif %}" id="login-form" action="{{ url_for('auth.login') }}" method="post">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        
+        <div class="checkbox-group">
+            <input type="checkbox" id="remember" name="remember">
+            <label for="remember">Remember me</label>
+        </div>
+        
+        <button type="submit" class="btn">Login</button>
+    </form>
+    
+    <form class="auth-form {% if signup %}active{% endif %}" id="signup-form" action="{{ url_for('auth.signup') }}" method="post">
+        <div class="form-group">
+            <label for="signup-username">Username</label>
+            <input type="text" id="signup-username" name="username" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" name="password" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="user-type">I am a</label>
+            <select id="user-type" name="user_type" required>
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+            </select>
+        </div>
+        
+        <button type="submit" class="btn">Sign Up</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function switchTab(tab) {
+        if (tab === 'login') {
+            document.getElementById('login-tab').classList.add('active');
+            document.getElementById('signup-tab').classList.remove('active');
+            document.getElementById('login-form').classList.add('active');
+            document.getElementById('signup-form').classList.remove('active');
+        } else {
+            document.getElementById('login-tab').classList.remove('active');
+            document.getElementById('signup-tab').classList.add('active');
+            document.getElementById('login-form').classList.remove('active');
+            document.getElementById('signup-form').classList.add('active');
+        }
+    }
+    
+    // Fix tab IDs
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.auth-tab')[0].id = 'login-tab';
+        document.querySelectorAll('.auth-tab')[1].id = 'signup-tab';
+    });
+</script>
+{% endblock %}
