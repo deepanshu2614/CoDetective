@@ -1,0 +1,89 @@
+# ---------------------------
+# Core Flask Framework
+# ---------------------------
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-Login==0.6.3
+Flask-CORS==4.0.0
+Werkzeug==2.3.7
+Jinja2==3.1.2
+MarkupSafe==2.1.3
+itsdangerous==2.1.2
+
+# ---------------------------
+# Environment Variables
+# ---------------------------
+python-dotenv==1.0.0
+
+# ---------------------------
+# Database
+# ---------------------------
+SQLAlchemy==2.0.20
+
+# ---------------------------
+# File Processing
+# ---------------------------
+PyPDF2==3.0.1
+PyYAML==6.0.1
+
+# ---------------------------
+# Data Science & Machine Learning
+# ---------------------------
+numpy==1.24.3
+pandas==2.0.3
+scikit-learn==1.3.0
+scipy==1.11.2
+matplotlib==3.7.2
+seaborn==0.12.2
+joblib==1.3.2
+
+# ---------------------------
+# Deep Learning & AI
+# ---------------------------
+torch==2.0.1
+transformers==4.30.2
+tokenizers==0.13.3
+safetensors==0.3.3
+
+# ---------------------------
+# OpenAI API (legacy version to avoid conflicts)
+# ---------------------------
+openai==0.27.8
+
+# ---------------------------
+# Code Analysis
+# ---------------------------
+pycparser==2.21
+
+# ---------------------------
+# HTTP & Networking
+# ---------------------------
+requests==2.31.0
+certifi==2023.7.22
+charset-normalizer==3.2.0
+idna==3.4
+
+# ---------------------------
+# Progress Bars
+# ---------------------------
+tqdm==4.65.0
+
+# ---------------------------
+# Date & Time
+# ---------------------------
+python-dateutil==2.8.2
+pytz==2023.3
+
+# ---------------------------
+# Text Processing
+# ---------------------------
+regex==2023.8.8
+
+# ---------------------------
+# Utilities (Fixed Dependency Issue)
+# ---------------------------
+# UPDATED to avoid pydantic / pydantic-core conflict
+typing-extensions>=4.14.1
+
+dataclasses==0.6
+attrs==23.1.0
