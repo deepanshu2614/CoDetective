@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}My Submissions - Code Similarity Detector{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/student.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="submissions-header">
+    <h1>My Submissions</h1>
+    <a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+{% if submissions %}
+    <div class="submissions-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Assignment</th>
+                    <th>Submitted At</th>
+                    <th>File</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for submission in submissions %}
+                    <tr>
+                        <td>{{ submission.assignment.title }}</td>
+                        <td>{{ submission.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ submission.filename }}</td>
+                        <td>
+                            <span class="status submitted">Submitted</span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="no-submissions">
+        <p>You haven't submitted any assignments yet.</p>
+        <a href="{{ url_for('student.dashboard') }}" class="btn btn-primary">View Assignments</a>
+    </div>
+{% endif %}
+{% endblock %}

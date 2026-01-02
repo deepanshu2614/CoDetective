@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Assignment - Code Similarity Detector{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/student.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="upload-header">
+    <h1>Submit Assignment</h1>
+    <a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+<div class="assignment-details">
+    <h2>{{ assignment.title }}</h2>
+    <p class="deadline">Deadline: {{ assignment.deadline.strftime('%Y-%m-%d') if assignment.deadline else 'No deadline' }}</p>
+    <div class="description">
+        <p>{{ assignment.description }}</p>
+    </div>
+</div>
+
+<div class="upload-container">
+    <h3>Upload Your Solution</h3>
+    
+    <form method="post" enctype="multipart/form-data" class="upload-form">
+        <div class="form-group">
+            <label for="file">Select C File (.c)</label>
+            <input type="file" id="file" name="file" accept=".c" required>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Submit Assignment</button>
+    </form>
+    
+    <div class="upload-instructions">
+        <h4>Instructions:</h4>
+        <ul>
+            <li>Make sure your code is well-commented and follows good programming practices</li>
+            <li>Only .c files are accepted</li>
+            <li>You can only submit once for each assignment</li>
+            <li>Double-check your code before submitting</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
